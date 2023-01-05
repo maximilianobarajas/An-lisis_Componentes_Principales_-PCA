@@ -1,0 +1,368 @@
+\documentclass{article}
+\usepackage[spanish]{babel}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{textgreek}
+\usepackage{amssymb}
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{graphicx}
+\usepackage{color}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{epstopdf}
+\usepackage[table]{xcolor}
+\usepackage{matlab}
+\hbadness=99999  
+\title{Análisis de Componentes Principales}
+\usepackage{blindtext}
+\usepackage{geometry}
+ \geometry{
+ a4paper,
+ total={190mm,270mm},
+ left=10mm,
+ right=10mm,
+ top=10mm,
+ }
+\begin{document}
+\maketitle
+\begin{abstract}
+El análisis de componentes principales, por sus siglas en inglés, PCA (Principal Component Analysis) es un algoritmo no supervisado el cual es usado ampliamente para explorar un conjunto de datos con la finalidad de facilitar su futuro análisis y visualización. A lo largo de este proyecto hemos realizado una implementación computacional de dicho algoritmo para finalmente aplicarlo sobre dos problemas distintos.
+\end{abstract}
+\section{Introducción}
+El proceso de realización de este proyecto consiste en distintas secciones, a lo largo de la primera sección se discuten los fundamentos teóricos del algoritmo como las bases de su funcionamiento a partir de diversos objetos matemáticos de la rama del Álgebra Lineal, en seguida se muestra la implementación computacional en MATLAB así como la ejemplificación de su uso con un ejemplo con el cual probamos su funcionamiento correcto.
+\section{Fundamentos del PCA}
+\subsection{Motivación y planteamiento del problema}
+Comenzaremos definiendo el problema, de manera estricta lo que busca el Análisis de Componentes Principales es reducir la dimensionalidad de un conjunto de datos con la menor perdida de información posible, esto puede plantearse como un problema de optimización donde representamos la perdida mínima de la información de nuestros datos a través de la mayorización de su varianza. 
+\subsection{Fundamentos teóricos del PCA}
+El problema tiene distintos métodos de resolverse, en este proyecto nos centraremos en el método basado en la matriz de covarianzas.
+Antes de definir el algoritmo definiremos los distintos objetos matemáticos necesarios.
+\subsubsection{Autovalores y Autovectores}
+Los autovectores esencialmente son definidos como los vectores \textbf{u} distintos del vector nulo de una transformación lineal \textbf{T} los cuales únicamente son escalados λ
+veces cuando se les aplica la transformación lineal, a los valores λ 
+asociados a los vectores \textbf{u} se les conocen como autovalores, podemos resumir los conceptos anteriores de la siguiente manera:
+Sea \textbf{T} una trasformación lineal, entonces \textbf{u} es un autovector (y λ un autovalor) si y solamente si:
+\[T(u)=\lambda u  \]
+De lo anterior es claro que si \textbf{A} es la matriz asociada a la transformación \textbf{T} se cumple lo siguiente:
+\[A u=\lambda u  \]
+De igual manera es fácil notar que podemos encontrar los autovectores y autovalores de una matriz dada de la siguiente manera:
+\[A u=\lambda u  \]
+\[A u=\lambda I u  \]
+\[A u - \lambda I u=0 \]
+\[(A  - \lambda I)u=0 \]
+La ecuación anterior tiene una solución para \textbf{u} distinta del vector nulo si y solamente si se cumple lo siguiente:
+\[ |A-\lambda I| =0 \]
+De lo anterior podemos resolver para λ y una vez conociendo las soluciones de λ podemos determinar el vector \textbf{u} resolviendo el siguiente problema homogéneo:
+\[(A  - \lambda I)u=0 \]
+\subsubsection{Matriz de Covarianzas}
+Antes de definir la matriz de covarianzas es necesario comprender el operador covarianza, el cual se define de la siguiente manera:
+Sean \textbf{X} y \textbf{Y} dos variables aleatorias, la covarianza de \textbf{X} respecto a \textbf{Y} es:
+\[cov(X,Y)=E[(X-E[X])(Y-E[Y])]\]
+Si aplicamos la linealidad del operador esperanza podemos encontrar esta formulación de la covarianza mucho mas simplificada:
+\[cov(X,Y)=E[(X-E[X])(Y-E[Y])]\]
+\[E[(X-E[X])(Y-E[Y])]=E[XY-XE[Y]-YE[X]+E[X]E[Y]]\]
+\[E[XY-XE[Y]-YE[X]+E[X]E[Y]]=E[XY]-E[XE[Y]]-E[YE[X]]+E[E[X]E[Y]]\]
+\[E[XY]-E[XE[Y]]-E[YE[X]]+E[E[X]E[Y]]=E[XY]-E[X]E[Y]-E[Y]E[X]+E[X]E[Y]\]
+\[E[XY]-E[X]E[Y]-E[Y]E[X]+E[X]E[Y]=E[XY]-E[X]E[Y]\]
+Finalmente obteniendo:
+\[cov(X,Y)=E[XY]-E[X]E[Y]\]
+De entre las propiedades que podemos destacar de la covarianza es que es un operador simétrico:\newline
+\textbf{Demostración: \\} 
+\[cov(X,Y)=E[XY]-E[X]E[Y]=E[YX]-E[Y]E[X]=cov(Y,X)\]
+Por otra parte si buscamos la covarianza de una variable aleatoria consigo misma encontramos la varianza de la variable aleatoria:\newline
+\textbf{Demostración: \\}
+\[cov(X,X)=E[XX]-E[X]E[X]=E[X^2]-E^2[X]=Var(X)\]
+Procedemos a definir la matriz de covarianzas:
+Sea F el conjunto de las variables aleatorias $X_1,X_2,X_3,...,X_n$ y C la matriz de covarianzas de dicho conjunto, entonces C es una matriz cuadrada $n\times n$ y sus entradas son de la siguiente forma:
+\[C_{ij}=cov(X_i,X_j)\]
+Las propiedades que destacaremos de la matriz de covarianzas son las siguientes: 
+Una matriz de covarianzas es una matriz simétrica.\newline
+\textbf{Demostración: \\}
+\[C_{ij}=cov(X_i,X_j)=E[X_iX_j]-E[X_i]E[X_j]\]
+\[E[X_iX_j]-E[X_i]E[X_j]=E[X_jX_i]-E[X_j]E[X_i]=cov(X_j,X_i)=C_{ji}\]
+La diagonal de una matriz de covarianzas son las varianzas de las variables aleatorias:\newline
+\textbf{Demostración: \\}
+\[C_{ii}=cov(X_i,X_i)=E[X_iX_i]-E[X_i]E[X_i]=E[X_i^2]-E^2[X_i]=Var(X_i)\]
+\subsubsection{Definición del algoritmo}
+El algoritmo definido por Korjus es un problema de autovalores definido de la siguiente forma: 
+\[(C   -   \lambda I) V = 0\]
+Donde C representa la matriz de covarianzas, V los autovectores de la matriz de covarianzas y λ los autovalores de los respectivos autovectores.
+Se puede llegar a este resultado a partir de un problema de optimización resuelto por medio de multiplicadores de Lagrange, tal como lo establece Korjus, sin embargo no es el objetivo principal de este proyecto la obtención del modelo.
+Por otra parte Jaadi establece que para obtener la proyección de los datos sobre las componentes principales basta con multiplicar la matriz traspuesta de la matriz compuesta por los autovectores como columnas y la matriz de datos traspuesta de igual manera:
+\[D=V^{T}d^{T}\]
+D representa la matriz nueva con los datos proyectados sobre la n-ésima componente principal como la n-ésima columna, V la matriz cuyas columnas son los autovectores de la matriz de covarianzas y d la matriz de datos originales.
+\section{Implementación en MATLAB}
+Para la realización del modelo en MATLAB se utilizaron las funciones integradas de covarianza y Eigenvalores, a lo largo de esta sección analizaremos el funcionamiento del algoritmo con un ejemplo dado un conjunto de datos de dos dimensiones generados al azar.
+\begin{matlabcode}
+close all
+clear all
+%Generamos una muestra aleatoria de 50 datos
+data(:,1) = randn(50,1)
+%Ordenamos los datos
+data = sortrows(data,1)
+%Generamos otra muestra que representará
+%la segunda coordenada de nuestros datos
+data(:,2) = 2.4 + 1.1 * data(:,1)
+data(:,2) = data(:,2) + 0.13*randn(size(data(:,1)))
+%Centramos los datos sustrayendo la media
+data(:,1) = data(:,1)-mean(data(:,1))
+data(:,2) = data(:,2)-mean(data(:,2))
+\end{matlabcode}
+\begin{matlaboutput}
+data = 50x2    
+   -1.9844   -2.1163
+   -1.8978   -2.0913
+   -1.8487   -2.0392
+   -1.8069   -2.0925
+   -1.5962   -1.6245
+   -1.4231   -1.5838
+   -1.1797   -1.3917
+   -1.0539   -0.9847
+   -1.0024   -1.1330
+   -0.9182   -1.0877
+
+\end{matlaboutput}
+\begin{matlabcode}
+%Graficamos los puntos generados
+scatter(data(:,1),data(:,2),"blue","o",'LineWidth',1)
+\end{matlabcode}
+\begin{center}
+\includegraphics[width=\maxwidth{20.196688409433015em}]{figure_0.eps}
+\end{center}
+\begin{matlabcode}
+%Obtenemos la matriz de covarianzas
+C = cov(data)
+\end{matlabcode}
+\begin{matlaboutput}
+C = 2x2    
+    1.1875    1.3213
+    1.3213    1.4842
+
+\end{matlaboutput}
+\begin{matlabcode}
+%Obtenemos los autovalores y autovectores 
+% de la matriz de covatianzas 
+[V,D] = eig(C) 
+\end{matlabcode}
+\begin{matlaboutput}
+V = 2x2    
+   -0.7455    0.6665
+    0.6665    0.7455
+
+D = 2x2    
+    0.0062         0
+         0    2.6655
+
+\end{matlaboutput}
+\begin{matlabcode}
+%Graficamos nuevamente, esta vez dibujando 
+% los vectores propios
+scatter(data(:,1),data(:,2),"blue","o",'LineWidth',1)
+hold on
+quiver(0,0,V(1,1),V(2,1),'LineWidth',4)
+quiver(0,0,V(1,2),V(2,2),'LineWidth',4)
+hold off
+axis equal
+\end{matlabcode}
+\begin{center}
+\includegraphics[width=\maxwidth{20.196688409433015em}]{figure_1.eps}
+\end{center}
+\begin{matlabcode}
+g=zeros(50,2)
+h=zeros(50,2)
+\end{matlabcode}
+Ahora procedemos a encontrar las proyecciones de los datos sobre cada uno de los dos autovectores que encontramos a partir de la matriz de covarianzas:
+\begin{matlabcode}
+%Calculamos las proyecciones de nuestros datos sobre los vectores
+for i=1:length(data)
+g(i,:) = (dot(data(i,:),V(:,1))/norm(V(:,1))^2)*V(:,1);
+h(i,:) = (dot(data(i,:),V(:,2))/norm(V(:,2))^2)*V(:,2);
+end 
+g
+\end{matlabcode}
+\begin{matlaboutput}
+g = 50x2    
+   -0.0513    0.0459
+   -0.0157    0.0140
+   -0.0143    0.0127
+    0.0354   -0.0317
+   -0.0800    0.0715
+   -0.0040    0.0035
+    0.0358   -0.0320
+   -0.0965    0.0862
+    0.0058   -0.0052
+    0.0301   -0.0269
+\end{matlaboutput}
+\begin{matlabcode}
+h
+\end{matlabcode}
+\begin{matlaboutput}
+h = 50x2    
+   -1.9330   -2.1622
+   -1.8822   -2.1053
+   -1.8344   -2.0519
+   -1.8424   -2.0608
+   -1.5163   -1.6960
+   -1.4191   -1.5874
+   -1.2155   -1.3596
+   -0.9574   -1.0709
+   -1.0083   -1.1278
+   -0.9483   -1.0607
+\end{matlaboutput}
+Ahora procedemos a graficar las proyecciones de los datos sobre cada autovector:
+\begin{matlabcode}
+%Graficamos los datos una vez proyectados sobre cada vector 
+scatter(g(:,1),g(:,2))
+hold on
+scatter(h(:,1),h(:,2))
+hold off
+axis equal
+\end{matlabcode}
+\begin{center}
+\includegraphics[width=\maxwidth{20.196688409433015em}]{figure_2.eps}
+\end{center}
+Como podemos observar en la gráfica, los datos ya se encuentran representados como proyecciones sobre cada uno de los autovectores, ahora rotaremos el eje coordenado de los vectores proyección para poder reducir la dimensionalidad de los datos de 2 a 1, haremos uso de la siguiente matriz de transformación:
+\[
+R(\theta)=
+\begin{pmatrix}
+cos(\theta) & -sin(\theta)\\
+sin(\theta) & cos(\theta) 
+\end{pmatrix}\]
+Sin embargo, antes de poder transformar los vectores proyección debemos encontrar el ángulo el cual debemos rotar los datos desde el origen, podemos encontrar el valor del ángulo para ambas componentes principales de la siguiente manera:
+\begin{matlabcode}
+%Calculamos los ángulos con respecto al eje x positivo
+%de las componentes principales
+theta1=atan(V(2,1)/V(1,1))
+\end{matlabcode}
+\begin{matlaboutput}
+theta1 = -0.7295
+\end{matlaboutput}
+\begin{matlabcode}
+theta2=atan(V(2,2)/V(1,2))
+\end{matlabcode}
+\begin{matlaboutput}
+theta2 = 0.8413
+\end{matlaboutput}
+\begin{matlabcode}
+%Calculamos las respectivas matrices de rotación
+R1=[cos(theta1)  -sin(theta1);
+    sin(theta1)  cos(theta1)]
+\end{matlabcode}
+\begin{matlaboutput}
+R1 = 2x2    
+    0.7455    0.6665
+   -0.6665    0.7455
+\end{matlaboutput}
+\begin{matlabcode}
+R2=[cos(theta2)  -sin(theta2);
+    sin(theta2)  cos(theta2)]
+\end{matlabcode}
+
+\begin{matlaboutput}
+R2 = 2x2    
+    0.6665   -0.7455
+    0.7455    0.6665
+\end{matlaboutput}
+Procedemos a rotar los vectores proyección con las matrices de rotación obtenidas anteriormente:
+\begin{matlabcode}
+%Rotamos los valores sobre el nuevo eje el cual
+%es su respectivo autovector
+g=g*R1
+\end{matlabcode}
+\begin{matlaboutput}
+g = 50x2    
+   -0.0689   -0.0000
+   -0.0210   -0.0000
+   -0.0191   -0.0000
+    0.0475   -0.0000
+   -0.1073         0
+   -0.0053         0
+    0.0481         0
+   -0.1294         0
+    0.0078         0
+    0.0404         0
+
+\end{matlaboutput}
+\begin{matlabcode}
+h=h*R2
+\end{matlabcode}
+\begin{matlaboutput}
+h = 50x2    
+   -2.9003    0.0000
+   -2.8240    0.0000
+   -2.7523    0.0000
+   -2.7643    0.0000
+   -2.2750    0.0000
+   -2.1292    0.0000
+   -1.8238    0.0000
+   -1.4365    0.0000
+   -1.5128    0.0000
+   -1.4228    0.0000
+\end{matlaboutput}
+Una vez rotados los datos podemos observar que su segunda coordenada es nula, hemos llevado a cabo la reducción de dimensionalidad de manera exitosa, procedemos a graficar los datos unidimensionales respectivos de cada una de las componentes:
+\begin{matlabcode}
+%Graficamos los datos unidimensionales
+scatter(g(:,1),g(:,2))
+axis equal
+\end{matlabcode}
+\begin{center}
+\includegraphics[width=\maxwidth{20.196688409433015em}]{figure_3.eps}
+\end{center}
+\begin{matlabcode}
+scatter(h(:,1),h(:,2))
+axis equal
+\end{matlabcode}
+\begin{center}
+\includegraphics[width=\maxwidth{20.196688409433015em}]{figure_4.eps}
+\end{center}
+\begin{matlabcode}
+%Si mostramos las varianzas de cada conjunto transformado
+%obtenemos los autovalores
+varg=var(g)
+\end{matlabcode}
+\begin{matlaboutput}
+varg = 1x2    
+    0.0062    0.0000
+\end{matlaboutput}
+\begin{matlabcode}
+varh=var(h)
+\end{matlabcode}
+\begin{matlaboutput}
+varh = 1x2    
+    2.6655    0.0000
+\end{matlaboutput}
+\begin{matlabcode}
+D
+\end{matlabcode}
+\begin{matlaboutput}
+D = 2x2    
+    0.0062         0
+         0    2.6655
+\end{matlaboutput}
+En este caso la componente que maximiza la varianza es la segunda dado que su autovalor es mayor y consecuentemente su varianza también lo es.Ahora procedemos a transformar los datos a través de la operación propuesta por Jaadi:
+\[D=V^{T}d^{T}\]
+\begin{matlabcode}
+datosnuevos_ambas_componentes=(V' * data')'
+\end{matlabcode}
+\begin{matlaboutput}
+datosnuevos_ambas_componentes = 50x2    
+    0.0689   -2.9003
+    0.0210   -2.8240
+    0.0191   -2.7523
+   -0.0475   -2.7643
+    0.1073   -2.2750
+    0.0053   -2.1292
+   -0.0481   -1.8238
+    0.1294   -1.4365
+   -0.0078   -1.5128
+   -0.0404   -1.4228
+\end{matlaboutput}
+Del problema sobre el cual ejemplificamos el algoritmo a la hora de implementarlo podemos concluir dos cosas, el aplicar la proyección sobre las componentes principales y luego efectuar una rotación sobre el sistema de coordenadas es efectivamente equivalente a efectuar la operación que estableció Jaadi, de igual manera en este caso en particular la segunda componente principal es la que presenta una mayor varianza. 
+\section{Conclusiones}
+Podemos concluir 
+\bibliographystyle{alpha}
+\bibliography{sample}
+\end{document}
